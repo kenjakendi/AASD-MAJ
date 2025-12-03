@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Test</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+            background: #1e293b;
+            color: #f1f5f9;
+        }
+        #result { padding: 20px; background: #334155; border-radius: 8px; }
+        .success { color: #10b981; font-size: 24px; }
+        .error { color: #ef4444; font-size: 24px; }
+    </style>
+</head>
+<body>
+    <h1>Library Loading Test</h1>
+    <div id="result">Testing...</div>
+    
+    <!-- Load libraries with timestamp to bypass cache -->
+    <script src="/static/libs/socket.io.min.js?t=123"></script>
+    <script src="/static/libs/vis-network.min.js?t=123"></script>
+    <script src="/static/libs/chart.umd.min.js?t=123"></script>
+    
+    <script>
+        setTimeout(() => {
+            const results = [];
+            
+            if (typeof io !== 'undefined') {
+                results.push('✅ Socket.IO loaded');
+            } else {
+                results.push('❌ Socket.IO FAILED');
+            }
+            
+            if (typeof vis !== 'undefined') {
+                results.push('✅ vis.js loaded');
+            } else {
+                results.push('❌ vis.js FAILED');
+            }
+            
+            if (typeof Chart !== 'undefined') {
+                results.push('✅ Chart.js loaded');
+            } else {
+                results.push('❌ Chart.js FAILED');
+            }
+            
+            document.getElementById('result').innerHTML = '<div class="success">' + results.join('<br>') + '</div>';
+            
+            // If all loaded, test network graph
+            if (typeof vis !== 'undefined') {
+                document.getElementById('result').innerHTML += '<br><br><h2>Testing Network Graph:</h2><div id="network" style="width:600px;height:400px;background:#0f172a;border:1px solid #64748b;"></div>';
+                
+                const container = document.getElementById('network');
+                const data = {
+                    nodes: new vis.DataSet([
+                        {id: 1, label: '🎯 Coordinator', color: '#ef4444'},
+                        {id: 2, label: '👤 Caretaker', color: '#3b82f6'},
+                        {id: 3, label: '🐾 Animal', color: '#14b8a6'}
+                    ]),
+                    edges: new vis.DataSet([
+                        {from: 1, to: 2},
+                        {from: 1, to: 3}
+                    ])
+                };
+                
+                const options = {
+                    nodes: { font: { color: '#f1f5f9' } }
+                };
+                
+                const network = new vis.Network(container, data, options);
+                document.getElementById('result').innerHTML += '<p class="success">✅ Network graph created successfully!</p>';
+            }
+        }, 500);
+    </script>
+</body>
+</html>
+

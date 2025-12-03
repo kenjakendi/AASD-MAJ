@@ -1,0 +1,43 @@
+{
+  "jid": "veterinarian_01@serverhello",
+  "password": "shelter123",
+  "role": "veterinarian",
+  "worker_id": "vet_01",
+  "name": "Dr. Piotr Kamiński",
+  "competencies": [
+    "vaccination",
+    "health_check",
+    "initial_checkup"
+  ],
+  "max_concurrent_tasks": 1,
+  "availability": {
+    "monday": [
+      "00:00-23:59"
+    ],
+    "tuesday": [
+      "00:00-23:59"
+    ],
+    "wednesday": [
+      "00:00-23:59"
+    ],
+    "thursday": [
+      "00:00-23:59"
+    ],
+    "friday": [
+      "00:00-23:59"
+    ],
+    "saturday": [
+      "00:00-23:59"
+    ],
+    "sunday": [
+      "00:00-23:59"
+    ]
+  },
+  "specializations": [
+    "dogs",
+    "cats",
+    "small_animals"
+  ],
+  "emergency_available": true,
+  "log_level": "INFO"
+}

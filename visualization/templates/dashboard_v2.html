@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animal Shelter MAS - Dashboard V2</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+
+    <!-- Load libraries locally -->
+    <script src="{{ url_for('static', filename='libs/socket.io.min.js') }}?v=3"></script>
+    <script src="{{ url_for('static', filename='libs/vis-network.min.js') }}?v=3"></script>
+    <script src="{{ url_for('static', filename='libs/chart.umd.min.js') }}?v=3"></script>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🏥 Animal Shelter Multi-Agent System</h1>
+            <p class="subtitle">Real-Time Communication Dashboard V2</p>
+            <div class="status-bar">
+                <span class="status-item" id="connection-status">
+                    <span class="status-dot"></span>
+                    Connecting...
+                </span>
+                <span class="status-item" id="agent-count">Agents: <strong>0</strong></span>
+                <span class="status-item" id="message-count">Messages: <strong>0</strong></span>
+                <span class="status-item" id="messages-per-sec">Rate: <strong>0.00</strong> msg/s</span>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Network Visualization -->
+            <div class="panel network-panel">
+                <div class="panel-header">
+                    <h2>🔗 Agent Network</h2>
+                    <div class="panel-controls">
+                        <button id="reset-view">Reset View</button>
+                        <button id="reload-graph">Reload Graph</button>
+                    </div>
+                </div>
+                <div id="network-graph"></div>
+            </div>
+
+            <!-- Message Timeline -->
+            <div class="panel timeline-panel">
+                <div class="panel-header">
+                    <h2>📨 Message Timeline</h2>
+                    <button id="clear-timeline">Clear</button>
+                </div>
+                <div id="message-timeline"></div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="panel stats-panel">
+                <div class="panel-header">
+                    <h2>📊 Statistics</h2>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-messages">0</div>
+                        <div class="stat-label">Total Messages</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="active-agents">0</div>
+                        <div class="stat-label">Active Agents</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="uptime">0s</div>
+                        <div class="stat-label">Uptime</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="message-type-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Interactive Control Panel -->
+            <div class="panel control-panel">
+                <div class="panel-header">
+                    <h2>🎮 System Controls</h2>
+                    <span class="subtitle-small">Trigger system actions</span>
+                </div>
+                <div class="control-sections">
+                    <!-- Adoption Actions -->
+                    <div class="control-section">
+                        <h3>🏠 Adoption Actions</h3>
+                        <div class="control-group">
+                            <label for="animal-select">Select Animal:</label>
+                            <select id="animal-select" class="control-select">
+                                <option value="">Loading animals...</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label for="applicant-select">Select Applicant:</label>
+                            <select id="applicant-select" class="control-select">
+                                <option value="">Loading applicants...</option>
+                            </select>
+                        </div>
+                        <button class="control-btn adoption-btn" onclick="triggerAdoptionApplication()">
+                            📝 Submit Adoption Application
+                        </button>
+                    </div>
+
+                    <!-- Animal Care Actions -->
+                    <div class="control-section">
+                        <h3>🐾 Animal Care</h3>
+                        <div class="control-group">
+                            <label for="care-animal-select">Select Animal:</label>
+                            <select id="care-animal-select" class="control-select">
+                                <option value="">Loading animals...</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label for="care-action">Care Action:</label>
+                            <select id="care-action" class="control-select">
+                                <option value="feed">🍖 Feed Animal</option>
+                                <option value="walk">🚶 Walk Animal</option>
+                                <option value="checkup">⚕️ Health Checkup</option>
+                                <option value="vaccination">💉 Vaccination</option>
+                            </select>
+                        </div>
+                        <button class="control-btn care-btn" onclick="requestAnimalCare()">
+                            🎯 Request Care Task
+                        </button>
+                    </div>
+
+                    <!-- Animal Registration -->
+                    <div class="control-section">
+                        <h3>📋 New Animal Registration</h3>
+                        <div class="control-group">
+                            <label for="new-animal-name">Animal Name:</label>
+                            <input type="text" id="new-animal-name" class="control-input" placeholder="e.g., Buddy">
+                        </div>
+                        <div class="control-group">
+                            <label for="new-animal-species">Species:</label>
+                            <select id="new-animal-species" class="control-select">
+                                <option value="dog">🐕 Dog</option>
+                                <option value="cat">🐈 Cat</option>
+                                <option value="rabbit">🐰 Rabbit</option>
+                                <option value="bird">🐦 Bird</option>
+                            </select>
+                        </div>
+                        <button class="control-btn register-btn" onclick="registerNewAnimal()">
+                            ➕ Register New Animal
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Action Log Compact -->
+                <div class="action-log">
+                    <div class="action-log-header">
+                        <h4>📝 Action Log</h4>
+                        <div class="action-log-controls">
+                            <button class="expand-log-btn" onclick="toggleActionLogFullscreen()">⛶ Expand</button>
+                            <button class="clear-log-btn" onclick="clearActionLog()">Clear</button>
+                        </div>
+                    </div>
+                    <div id="action-log-content"></div>
+                </div>
+            </div>
+
+            <!-- Agent List Modal Toggle Button -->
+            <button id="toggle-agents-btn" class="floating-btn" onclick="toggleAgentsModal()">
+                👥 Agents
+            </button>
+
+            <!-- Agent List Modal -->
+            <div id="agents-modal" class="modal">
+                <div class="modal-content agents-modal-content">
+                    <div class="modal-header">
+                        <h2>👥 Active Agents</h2>
+                        <button class="close-modal" onclick="toggleAgentsModal()">&times;</button>
+                    </div>
+                    <div id="agent-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Log Fullscreen Modal -->
+        <div id="action-log-modal" class="modal">
+            <div class="modal-content action-log-modal-content">
+                <div class="modal-header">
+                    <h2>📝 Action Log</h2>
+                    <div class="action-log-controls">
+                        <button class="clear-log-btn" onclick="clearActionLog()">Clear</button>
+                        <button class="close-modal" onclick="toggleActionLogFullscreen()">&times;</button>
+                    </div>
+                </div>
+                <div id="action-log-fullscreen"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simplified dashboard - bulletproof version
+        let network, socket, messageTypeChart;
+        const roleIcons = {
+            'coordinator': '🎯', 'caretaker': '👤', 'cleaner': '🧹',
+            'veterinarian': '⚕️', 'reception': '📋', 'adoption': '🏠',
+            'animal': '🐾', 'room': '🚪', 'applicant': '👨', 'dashboard': '📒',
+            'bridge': '🌉', 'unknown': '🤖', 'default': '🤖'
+        };
+        const roleColors = {
+            'coordinator': '#ef4444', 'caretaker': '#3b82f6', 'cleaner': '#8b5cf6',
+            'veterinarian': '#10b981', 'reception': '#f59e0b', 'adoption': '#ec4899',
+            'animal': '#14b8a6', 'room': '#6366f1', 'applicant': '#facc15', 'dashboard': '#a78bfa',
+            'bridge': '#06b6d4', 'unknown': '#64748b', 'default': '#64748b'
+        };
+
+        // Helper function to extract role from JID
+        function extractRoleFromJID(jid) {
+            // Examples:
+            // "adoption@serverhello" -> "adoption"
+            // "room_r003@serverhello" -> "room"
+            // "applicant_app_002@serverhello" -> "applicant"
+            // "dashboard_bridge@serverhello" -> "bridge"
+            const jidLocal = jid.split('@')[0]; // Get part before @
+
+            if (jidLocal.includes('_')) {
+                const parts = jidLocal.split('_');
+                // Special case for dashboard_bridge -> use "bridge" as role
+                if (parts[0] === 'dashboard' && parts[1] === 'bridge') {
+                    return 'bridge';
+                }
+                // Otherwise, use first part
+                return parts[0];
+            }
+
+            return jidLocal;
+        }
+
+        // Initialize when DOM ready
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('✅ Dashboard V2 initializing...');
+
+            // Check libraries
+            if (typeof io === 'undefined') { console.error('❌ Socket.IO not loaded'); return; }
+            if (typeof vis === 'undefined') { console.error('❌ vis.js not loaded'); return; }
+            if (typeof Chart === 'undefined') { console.error('❌ Chart.js not loaded'); return; }
+
+            console.log('✅ All libraries loaded');
+
+            initNetwork();
+            initChart();
+            initSocket();
+            setupButtons();
+
+            // Load initial data via REST API
+            loadInitialData();
+        });
+
+        function initNetwork() {
+            const container = document.getElementById('network-graph');
+            const options = {
+                nodes: {
+                    shape: 'dot', size: 25,
+                    font: { size: 14, color: '#f1f5f9' },
+                    borderWidth: 2, shadow: true
+                },
+                edges: {
+                    width: 2,
+                    arrows: { to: { enabled: true, scaleFactor: 0.5 } },
+                    smooth: true,
+                    color: { color: '#64748b', highlight: '#3b82f6' }
+                },
+                physics: {
+                    enabled: true,
+                    barnesHut: {
+                        gravitationalConstant: -8000,
+                        centralGravity: 0.3,
+                        springLength: 150
+                    },
+                    stabilization: {
+                        iterations: 150,
+                        fit: false  // Don't auto-fit after stabilization
+                    }
+                },
+                interaction: {
+                    navigationButtons: false,
+                    keyboard: true,
+                    hover: true,
+                    zoomView: true,
+                    dragView: true
+                }
+            };
+
+            network = new vis.Network(container, { nodes: new vis.DataSet(), edges: new vis.DataSet() }, options);
+
+            // Stop physics after initial stabilization to preserve user positioning
+            network.once('stabilizationIterationsDone', function () {
+                console.log('✅ Network stabilized');
+                // Keep physics enabled but slow it down for new nodes
+                network.setOptions({ physics: { enabled: true } });
+            });
+
+            console.log('✅ Network initialized');
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('message-type-chart').getContext('2d');
+            messageTypeChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: [], datasets: [{ data: [], backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'] }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: '#f1f5f9', padding: 10, font: { size: 11 } } },
+                        title: { display: true, text: 'Messages by Type', color: '#f1f5f9', font: { size: 14 } }
+                    }
+                }
+            });
+            console.log('✅ Chart initialized');
+        }
+
+        function initSocket() {
+            socket = io();
+            socket.on('connect', () => {
+                console.log('✅ Socket connected');
+                document.getElementById('connection-status').innerHTML = '<span class="status-dot"></span> Connected';
+            });
+            socket.on('disconnect', () => {
+                console.log('⚠️ Socket disconnected');
+                document.getElementById('connection-status').innerHTML = '<span class="status-dot disconnected"></span> Disconnected';
+            });
+            socket.on('new_message', handleNewMessage);
+            socket.on('statistics_update', updateStats);
+            console.log('✅ Socket initialized');
+        }
+
+        async function loadInitialData() {
+            try {
+                console.log('📡 Loading initial data via REST API...');
+
+                // Fetch all data
+                const [agentsResp, connectionsResp, messagesResp, statsResp] = await Promise.all([
+                    fetch('/api/agents'),
+                    fetch('/api/connections'),
+                    fetch('/api/messages?limit=50'),
+                    fetch('/api/statistics')
+                ]);
+
+                const agents = await agentsResp.json();
+                const connections = await connectionsResp.json();
+                const messages = await messagesResp.json();
+                const stats = await statsResp.json();
+
+                console.log(`✅ Loaded: ${Object.keys(agents).length} agents, ${connections.length} connections, ${messages.length} messages`);
+
+                // Update UI
+                updateAgentList(agents);
+                updateStats(stats);
+                updateMessages(messages);
+                buildNetworkGraph(agents, connections);
+
+            } catch (error) {
+                console.error('❌ Error loading data:', error);
+            }
+        }
+
+        let isFirstLoad = true;
+        let graphInitialized = false;
+
+        function buildNetworkGraph(agents, connections) {
+            console.log(`🎨 Updating graph with ${Object.keys(agents).length} agents...`);
+
+            if (!graphInitialized) {
+                // First time: create fresh datasets
+                const nodes = new vis.DataSet();
+                const edges = new vis.DataSet();
+
+                Object.entries(agents).forEach(([name, agent]) => {
+                    console.log("AGENT: ---", agent);
+                    // Extract role from JID
+                    const jid = agent.jid || '';
+                    const role = extractRoleFromJID(jid);
+
+                    // Use metadata name if available, otherwise use JID name
+                    const displayName = (agent.metadata && agent.metadata.name) ? agent.metadata.name : name;
+
+                    const color = roleColors[role] || roleColors.default;
+                    const icon = roleIcons[role] || roleIcons.default;
+
+                    nodes.add({
+                        id: name,
+                        label: `${icon}\n${displayName}`,
+                        color: { background: color, border: color, highlight: { background: color, border: '#fff' } },
+                        title: `${displayName} (${role})\nMessages: ${agent.message_count || 0}`,
+                        font: { color: '#f1f5f9' }
+                    });
+                });
+
+                connections.forEach((conn, i) => {
+                    edges.add({
+                        id: `${conn.from}-${conn.to}`,
+                        from: conn.from,
+                        to: conn.to,
+                        value: conn.count || 1,
+                        label: (conn.count || 1).toString(),
+                        title: `${conn.count} messages\nProtocols: ${(conn.protocols || []).join(', ')}`
+                    });
+                });
+
+                network.setData({ nodes, edges });
+                graphInitialized = true;
+                console.log(`✅ Graph initialized: ${nodes.length} nodes, ${edges.length} edges`);
+
+                // Only fit on first load
+                setTimeout(() => {
+                    network.fit({ animation: { duration: 1000, easingFunction: 'easeInOutQuad' } });
+                }, 500);
+            } else {
+                // Subsequent updates: only update/add nodes and edges without resetting positions
+                const currentNodes = network.body.data.nodes;
+                const currentEdges = network.body.data.edges;
+
+                // Update or add nodes
+                Object.entries(agents).forEach(([name, agent]) => {
+                    const existingNode = currentNodes.get(name);
+
+                    // Extract role from JID
+                    const jid = agent.jid || '';
+                    const role = extractRoleFromJID(jid);
+
+                    // Use metadata name if available, otherwise use JID name
+                    const displayName = (agent.metadata && agent.metadata.name) ? agent.metadata.name : name;
+
+                    const color = roleColors[role] || roleColors.default;
+                    const icon = roleIcons[role] || roleIcons.default;
+
+                    const nodeData = {
+                        id: name,
+                        label: `${icon}\n${displayName}`,
+                        color: { background: color, border: color, highlight: { background: color, border: '#fff' } },
+                        title: `${displayName} (${role})\nMessages: ${agent.message_count || 0}`,
+                        font: { color: '#f1f5f9' }
+                    };
+
+                    if (existingNode) {
+                        // Update existing node (preserves position)
+                        currentNodes.update(nodeData);
+                    } else {
+                        // Add new node
+                        currentNodes.add(nodeData);
+                        console.log(`➕ Added new node: ${name}`);
+                    }
+                });
+
+                // Update or add edges
+                connections.forEach((conn) => {
+                    const edgeId = `${conn.from}-${conn.to}`;
+                    const existingEdge = currentEdges.get(edgeId);
+
+                    const edgeData = {
+                        id: edgeId,
+                        from: conn.from,
+                        to: conn.to,
+                        value: conn.count || 1,
+                        label: (conn.count || 1).toString(),
+                        title: `${conn.count} messages\nProtocols: ${(conn.protocols || []).join(', ')}`
+                    };
+
+                    if (existingEdge) {
+                        currentEdges.update(edgeData);
+                    } else {
+                        currentEdges.add(edgeData);
+                    }
+                });
+
+                console.log(`✅ Graph updated (positions preserved)`);
+            }
+        }
+
+        function handleNewMessage(msg) {
+            // Add to timeline
+            const timeline = document.getElementById('message-timeline');
+            const div = document.createElement('div');
+            div.className = 'message-item';
+            const time = new Date(msg.timestamp).toLocaleTimeString();
+            div.innerHTML = `
+                <div class="message-header">
+                    <span class="message-from-to">${msg.from} → ${msg.to}</span>
+                    <span class="message-time">${time}</span>
+                </div>
+                <div class="message-meta">
+                    <span class="badge performative">${msg.performative}</span>
+                    <span class="badge protocol">${msg.protocol}</span>
+                </div>
+            `;
+            timeline.insertBefore(div, timeline.firstChild);
+            while (timeline.children.length > 50) timeline.removeChild(timeline.lastChild);
+
+            // Update edge (NO flash animation to avoid errors)
+            try {
+                const edges = network.body.data.edges;
+                const edgeId = `${msg.from}-${msg.to}`;
+                let edge = edges.get(edgeId);
+
+                if (edge) {
+                    edge.value = (edge.value || 1) + 1;
+                    edge.label = edge.value.toString();
+                    edges.update(edge);
+                } else if (network.body.data.nodes.get(msg.from) && network.body.data.nodes.get(msg.to)) {
+                    // Only create edge if both nodes exist
+                    edges.add({
+                        id: edgeId,
+                        from: msg.from,
+                        to: msg.to,
+                        value: 1,
+                        label: '1'
+                    });
+                }
+            } catch (e) {
+                // Silently ignore edge errors
+            }
+        }
+
+        function updateStats(stats) {
+            document.getElementById('total-messages').textContent = stats.total_messages || 0;
+            document.getElementById('active-agents').textContent = stats.active_agents || 0;
+            document.getElementById('message-count').innerHTML = `Messages: <strong>${stats.total_messages || 0}</strong>`;
+            document.getElementById('messages-per-sec').innerHTML = `Rate: <strong>${(stats.messages_per_second || 0).toFixed(2)}</strong> msg/s`;
+
+            const uptime = stats.uptime_seconds || 0;
+            const hours = Math.floor(uptime / 3600);
+            const minutes = Math.floor((uptime % 3600) / 60);
+            const seconds = Math.floor(uptime % 60);
+            document.getElementById('uptime').textContent = `${hours}h ${minutes}m ${seconds}s`;
+
+            if (messageTypeChart && stats.messages_by_type) {
+                messageTypeChart.data.labels = Object.keys(stats.messages_by_type);
+                messageTypeChart.data.datasets[0].data = Object.values(stats.messages_by_type);
+                messageTypeChart.update('none');
+            }
+        }
+
+        function updateMessages(messages) {
+            const timeline = document.getElementById('message-timeline');
+            timeline.innerHTML = '';
+            messages.slice(-20).reverse().forEach(msg => {
+                const div = document.createElement('div');
+                div.className = 'message-item';
+                div.style.animation = 'none';
+                const time = new Date(msg.timestamp).toLocaleTimeString();
+                div.innerHTML = `
+                    <div class="message-header">
+                        <span class="message-from-to">${msg.from} → ${msg.to}</span>
+                        <span class="message-time">${time}</span>
+                    </div>
+                    <div class="message-meta">
+                        <span class="badge performative">${msg.performative}</span>
+                        <span class="badge protocol">${msg.protocol}</span>
+                    </div>
+                `;
+                timeline.appendChild(div);
+            });
+        }
+
+        function updateAgentList(agents) {
+            const list = document.getElementById('agent-list');
+            const count = document.getElementById('agent-count');
+            count.innerHTML = `Agents: <strong>${Object.keys(agents).length}</strong>`;
+            list.innerHTML = '';
+
+            Object.entries(agents).forEach(([name, agent]) => {
+                // Extract role from JID
+                const jid = agent.jid || '';
+                const role = extractRoleFromJID(jid);
+
+                // Use metadata name if available, otherwise use JID name
+                const displayName = (agent.metadata && agent.metadata.name) ? agent.metadata.name : name;
+
+                const icon = roleIcons[role] || roleIcons.default;
+                const div = document.createElement('div');
+                div.className = 'agent-item';
+                div.innerHTML = `
+                    <div class="agent-icon">${icon}</div>
+                    <div class="agent-info">
+                        <div class="agent-name">${displayName}</div>
+                        <div class="agent-role">${role}</div>
+                    </div>
+                    <div class="agent-status"></div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function setupButtons() {
+            document.getElementById('reset-view').addEventListener('click', () => network.fit());
+            document.getElementById('reload-graph').addEventListener('click', loadInitialData);
+            document.getElementById('clear-timeline').addEventListener('click', () => {
+                document.getElementById('message-timeline').innerHTML = '';
+            });
+        }
+
+        // Auto-refresh statistics and messages (but NOT the graph structure to preserve positions)
+        setInterval(() => {
+            // Only update stats and messages, not the full graph
+            fetch('/api/statistics').then(r => r.json()).then(updateStats);
+            fetch('/api/messages?limit=50').then(r => r.json()).then(updateMessages);
+        }, 5000);
+
+        // Refresh graph less frequently (every 30 seconds) to allow for new agents
+        setInterval(() => {
+            fetch('/api/agents').then(r => r.json()).then(agents => {
+                fetch('/api/connections').then(r => r.json()).then(connections => {
+                    buildNetworkGraph(agents, connections);
+                });
+            });
+        }, 30000);
+
+        // ========== INTERACTIVE CONTROL FUNCTIONS ==========
+
+        // Load control panel data
+        async function loadControlPanelData() {
+            try {
+                const [animalsResp, roomsResp, applicantsResp] = await Promise.all([
+                    fetch('/api/control/animals'),
+                    fetch('/api/control/rooms'),
+                    fetch('/api/control/applicants')
+                ]);
+
+                const animals = await animalsResp.json();
+                const rooms = await roomsResp.json();
+                const applicants = await applicantsResp.json();
+
+                // Populate animal selects
+                const animalSelect = document.getElementById('animal-select');
+                const careAnimalSelect = document.getElementById('care-animal-select');
+
+                // API already filters out adopted animals, so we can use the list directly
+                // Additional client-side filter as defense in depth
+                console.log("animals", animals);
+                const availableAnimals = animals.filter(a => a.adoption_status !== 'adopted');
+                const animalOptions = availableAnimals.map(a =>
+                    `<option value="${a.id}">${a.name} (${a.species})</option>`
+                ).join('');
+                animalSelect.innerHTML = '<option value="">-- Select Animal --</option>' + animalOptions;
+                careAnimalSelect.innerHTML = '<option value="">-- Select Animal --</option>' + animalOptions;
+
+                // Populate complete adoption select (if it exists)
+                const adoptCompleteSelect = document.getElementById('adopt-complete-animal');
+                if (adoptCompleteSelect) {
+                    adoptCompleteSelect.innerHTML = '<option value="">-- Select Animal --</option>' + animalOptions;
+                }
+
+                // Populate room select (if it exists)
+                const roomSelect = document.getElementById('room-select');
+                if (roomSelect) {
+                    const roomOptions = rooms.map(r =>
+                        `<option value="${r.id}">${r.name} - ${r.cleanliness_state}</option>`
+                    ).join('');
+                    roomSelect.innerHTML = '<option value="">-- Select Room --</option>' + roomOptions;
+                }
+
+                // Populate applicant select
+                const applicantSelect = document.getElementById('applicant-select');
+                const applicantOptions = applicants.map(a =>
+                    `<option value="${a.id}">${a.name} (Age: ${a.age})</option>`
+                ).join('');
+                applicantSelect.innerHTML = '<option value="">-- Select Applicant --</option>' + applicantOptions;
+
+            } catch (error) {
+                console.error('Error loading control panel data:', error);
+                logAction('❌ Error loading control panel data', 'error');
+            }
+        }
+
+        // Adoption Application
+        async function triggerAdoptionApplication() {
+            const animalId = document.getElementById('animal-select').value;
+            const applicantId = document.getElementById('applicant-select').value;
+
+            if (!animalId || !applicantId) {
+                alert('Please select both an animal and an applicant');
+                return;
+            }
+
+            logAction(`📝 Submitting adoption application for animal ${animalId} by applicant ${applicantId}...`, 'info');
+
+            try {
+                const response = await fetch('/api/trigger/adoption', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ animal_id: animalId, applicant_id: applicantId })
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    logAction(`✅ ${result.message}`, 'success');
+                } else {
+                    logAction(`❌ ${result.message}`, 'error');
+                }
+            } catch (error) {
+                logAction(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Mark Room as Dirty
+        async function markRoomDirty() {
+            const roomId = document.getElementById('room-select').value;
+
+            if (!roomId) {
+                alert('Please select a room');
+                return;
+            }
+
+            logAction(`💩 Marking room ${roomId} as dirty...`, 'info');
+
+            try {
+                const response = await fetch('/api/trigger/room_dirty', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ room_id: roomId })
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    logAction(`✅ ${result.message}`, 'success');
+                    loadControlPanelData(); // Refresh data
+                } else {
+                    logAction(`❌ ${result.message}`, 'error');
+                }
+            } catch (error) {
+                logAction(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Request Room Cleaning
+        async function requestRoomCleaning() {
+            const roomId = document.getElementById('room-select').value;
+
+            if (!roomId) {
+                alert('Please select a room');
+                return;
+            }
+
+            logAction(`✨ Requesting cleaning for room ${roomId}...`, 'info');
+
+            try {
+                const response = await fetch('/api/trigger/room_clean', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ room_id: roomId })
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    logAction(`✅ ${result.message}`, 'success');
+                } else {
+                    logAction(`❌ ${result.message}`, 'error');
+                }
+            } catch (error) {
+                logAction(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Request Animal Care
+        async function requestAnimalCare() {
+            const animalId = document.getElementById('care-animal-select').value;
+            const careAction = document.getElementById('care-action').value;
+
+            if (!animalId) {
+                alert('Please select an animal');
+                return;
+            }
+
+            const actionNames = {
+                'feed': '🍖 Feeding',
+                'walk': '🚶 Walking',
+                'checkup': '⚕️ Health Checkup',
+                'vaccination': '💉 Vaccination'
+            };
+
+            logAction(`${actionNames[careAction]} requested for animal ${animalId}...`, 'info');
+
+            try {
+                const response = await fetch('/api/trigger/animal_care', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ animal_id: animalId, action: careAction })
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    logAction(`✅ ${result.message}`, 'success');
+                } else {
+                    logAction(`❌ ${result.message}`, 'error');
+                }
+            } catch (error) {
+                logAction(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Register New Animal
+        async function registerNewAnimal() {
+            const name = document.getElementById('new-animal-name').value.trim();
+            const species = document.getElementById('new-animal-species').value;
+
+            if (!name) {
+                alert('Please enter an animal name');
+                return;
+            }
+
+            logAction(`📋 Registering new ${species} named ${name}...`, 'info');
+
+            try {
+                const response = await fetch('/api/trigger/register_animal', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name, species: species })
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    logAction(`✅ ${result.message}`, 'success');
+                    document.getElementById('new-animal-name').value = '';
+                    // Force immediate reload of animal list
+                    setTimeout(() => loadControlPanelData(), 500);
+                } else {
+                    logAction(`❌ ${result.message}`, 'error');
+                }
+            } catch (error) {
+                logAction(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Complete Adoption
+        async function completeAdoption() {
+            const animalId = document.getElementById('adopt-complete-animal').value;
+
+            if (!animalId) {
+                alert('Please select an animal');
+                return;
+            }
+
+            if (!confirm(`Mark animal ${animalId} as adopted? This will remove it from available animals.`)) {
+                return;
+            }
+
+            logAction(`✅ Completing adoption for animal ${animalId}...`, 'info');
+
+            try {
+                const response = await fetch('/api/trigger/complete_adoption', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ animal_id: animalId })
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    logAction(`✅ ${result.message}`, 'success');
+                    setTimeout(() => loadControlPanelData(), 500);
+                } else {
+                    logAction(`❌ ${result.message}`, 'error');
+                }
+            } catch (error) {
+                logAction(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Request System Status
+        async function requestSystemStatus() {
+            logAction(`🔍 Requesting system status...`, 'info');
+
+            try {
+                const response = await fetch('/api/trigger/system_status');
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    logAction(`✅ System Status Retrieved`, 'success');
+                    logAction(`  • Total Animals: ${result.data.animals_count}`, 'info');
+                    logAction(`  • Available: ${result.data.animals_available}`, 'info');
+                    logAction(`  • Adopted: ${result.data.animals_adopted}`, 'info');
+                    logAction(`  • Rooms: ${result.data.rooms_count}`, 'info');
+                    logAction(`  • Active Agents: ${result.data.active_agents}`, 'info');
+                } else {
+                    logAction(`❌ ${result.message}`, 'error');
+                }
+            } catch (error) {
+                logAction(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Simulate Emergency
+        async function simulateEmergency() {
+            if (!confirm('This will trigger an emergency alert in the system. Continue?')) {
+                return;
+            }
+
+            logAction(`🚨 Simulating emergency situation...`, 'warning');
+
+            try {
+                const response = await fetch('/api/trigger/emergency', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'health_emergency', animal_id: 'random' })
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    logAction(`✅ ${result.message}`, 'success');
+                } else {
+                    logAction(`❌ ${result.message}`, 'error');
+                }
+            } catch (error) {
+                logAction(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Action Logger
+        function logAction(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.innerHTML = `<span class="log-time">[${timestamp}]</span> ${message}`;
+
+            // Add to compact log
+            const logContent = document.getElementById('action-log-content');
+            logContent.insertBefore(logEntry.cloneNode(true), logContent.firstChild);
+            while (logContent.children.length > 20) {
+                logContent.removeChild(logContent.lastChild);
+            }
+
+            // Add to fullscreen log
+            const logFullscreen = document.getElementById('action-log-fullscreen');
+            logFullscreen.insertBefore(logEntry.cloneNode(true), logFullscreen.firstChild);
+            while (logFullscreen.children.length > 100) {
+                logFullscreen.removeChild(logFullscreen.lastChild);
+            }
+        }
+
+        function clearActionLog() {
+            document.getElementById('action-log-content').innerHTML = '';
+            document.getElementById('action-log-fullscreen').innerHTML = '';
+            logAction('Action log cleared', 'info');
+        }
+
+        // Modal Functions
+        function toggleAgentsModal() {
+            const modal = document.getElementById('agents-modal');
+            modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function toggleActionLogFullscreen() {
+            const modal = document.getElementById('action-log-modal');
+            modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function (event) {
+            const agentsModal = document.getElementById('agents-modal');
+            const logModal = document.getElementById('action-log-modal');
+            if (event.target === agentsModal) {
+                agentsModal.style.display = 'none';
+            }
+            if (event.target === logModal) {
+                logModal.style.display = 'none';
+            }
+        }
+
+        // Load control panel data on initialization
+        setTimeout(loadControlPanelData, 1000);
+        // Refresh control panel data every 30 seconds (not too frequently)
+        setInterval(loadControlPanelData, 30000);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,18 @@
+{
+  "jid": "reception@serverhello",
+  "password": "shelter123",
+  "role": "reception",
+  "operating_hours": {
+    "monday": ["09:00-17:00"],
+    "tuesday": ["09:00-17:00"],
+    "wednesday": ["09:00-17:00"],
+    "thursday": ["09:00-17:00"],
+    "friday": ["09:00-17:00"],
+    "saturday": ["10:00-14:00"],
+    "sunday": []
+  },
+  "quarantine_room_id": "R004",
+  "default_initial_checkup_priority": "high",
+  "log_level": "INFO"
+}
+

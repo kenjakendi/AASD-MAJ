@@ -1,0 +1,20 @@
+{
+  "jid": "adoption@serverhello",
+  "password": "shelter123",
+  "role": "adoption",
+  "processing_interval": 5,
+  "application_review_time": 3,
+  "adoption_criteria": {
+    "min_age": 21,
+    "requires_home_visit": true,
+    "requires_reference": true,
+    "requires_previous_pet_experience": false
+  },
+  "adoption_fee": {
+    "dog": 500,
+    "cat": 300,
+    "small_animal": 100
+  },
+  "log_level": "INFO"
+}
+

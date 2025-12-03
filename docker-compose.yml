@@ -1,0 +1,241 @@
+version: '3.8'
+
+services:
+  # Serwer XMPP Prosody
+  xmpp_server:
+    image: prosody/prosody:latest
+    container_name: shelter_xmpp
+    hostname: serverhello
+    environment:
+      PROSODY_VIRTUAL_HOSTS: "serverhello"
+      PROSODY_ADMINS: "admin@serverhello"
+    ports:
+      - "5222:5222"  # Client connections
+      - "5269:5269"  # Server-to-server
+      - "5280:5280"  # HTTP
+    volumes:
+      - ./prosody/conf/prosody.cfg.lua:/etc/prosody/prosody.cfg.lua
+      - ./prosody/init.sh:/usr/local/bin/init.sh:ro
+      - prosody_data:/var/lib/prosody
+    entrypoint: ["/bin/bash", "/usr/local/bin/init.sh"]
+    networks:
+      shelter_net:
+        aliases:
+          - serverhello
+    restart: unless-stopped
+
+  # Visualization Dashboard
+  dashboard:
+    build:
+      context: .
+      dockerfile: visualization/Dockerfile
+    container_name: shelter_dashboard
+    ports:
+      - "5000:5000"  # Dashboard web interface
+    networks:
+      - shelter_net
+    environment:
+      - LOG_LEVEL=INFO
+      - BRIDGE_HOST=dashboard_bridge
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Coordinator Agent
+  coordinator:
+    build: .
+    container_name: shelter_coordinator
+    command: python -u main.py --role coordinator --config config/coordinator.json
+    depends_on:
+      - xmpp_server
+      - dashboard
+    networks:
+      - shelter_net
+    environment:
+      - XMPP_SERVER=serverhello
+      - AGENT_PASSWORD=shelter123
+      - LOG_LEVEL=INFO
+      - DASHBOARD_URL=http://dashboard:5000
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  # Caretaker Agents
+  caretaker_01:
+    build: .
+    container_name: shelter_caretaker_01
+    command: python -u main.py --role caretaker --config config/caretaker_01.json
+    depends_on:
+      - coordinator
+    networks:
+      - shelter_net
+    environment:
+      - XMPP_SERVER=serverhello
+      - AGENT_PASSWORD=shelter123
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  caretaker_02:
+    build: .
+    container_name: shelter_caretaker_02
+    command: python -u main.py --role caretaker --config config/caretaker_02.json
+    depends_on:
+      - coordinator
+    networks:
+      - shelter_net
+    environment:
+      - XMPP_SERVER=serverhello
+      - AGENT_PASSWORD=shelter123
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  # Cleaner Agent
+  cleaner_01:
+    build: .
+    container_name: shelter_cleaner_01
+    command: python -u main.py --role cleaner --config config/cleaner_01.json
+    depends_on:
+      - coordinator
+    networks:
+      - shelter_net
+    environment:
+      - XMPP_SERVER=serverhello
+      - AGENT_PASSWORD=shelter123
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  # Veterinarian Agent
+  veterinarian_01:
+    build: .
+    container_name: shelter_veterinarian_01
+    command: python -u main.py --role veterinarian --config config/veterinarian_01.json
+    depends_on:
+      - coordinator
+    networks:
+      - shelter_net
+    environment:
+      - XMPP_SERVER=serverhello
+      - AGENT_PASSWORD=shelter123
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  # Reception Agent
+  reception:
+    build: .
+    container_name: shelter_reception
+    command: python -u main.py --role reception --config config/reception.json
+    depends_on:
+      - coordinator
+    networks:
+      - shelter_net
+    environment:
+      - XMPP_SERVER=serverhello
+      - AGENT_PASSWORD=shelter123
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  # Dashboard Bridge Agent (HTTP to SPADE bridge)
+  dashboard_bridge:
+    build: .
+    container_name: shelter_dashboard_bridge
+    command: python -u main.py --role dashboard_bridge --config config/dashboard_bridge.json
+    depends_on:
+      - xmpp_server
+      - reception
+    networks:
+      - shelter_net
+    environment:
+      - XMPP_SERVER=serverhello
+      - AGENT_PASSWORD=shelter123
+    ports:
+      - "5001:5001"  # HTTP bridge port
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  # Adoption Agent
+  adoption:
+    build: .
+    container_name: shelter_adoption
+    command: python -u main.py --role adoption --config config/adoption.json
+    depends_on:
+      - coordinator
+    networks:
+      - shelter_net
+    environment:
+      - XMPP_SERVER=serverhello
+      - AGENT_PASSWORD=shelter123
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  # Animal Assistant Agents (dynamically created)
+  animal_assistant:
+    build: .
+    container_name: shelter_animals
+    command: python -u main.py --role animal_assistant --config config/animals.json
+    depends_on:
+      - coordinator
+    networks:
+      - shelter_net
+    environment:
+      - XMPP_SERVER=serverhello
+      - AGENT_PASSWORD=shelter123
+    volumes:
+      - ./logs:/app/logs
+    deploy:
+      replicas: 1
+    restart: unless-stopped
+
+  # Room Agents
+  rooms:
+    build: .
+    container_name: shelter_rooms
+    command: python -u main.py --role room --config config/rooms.json
+    depends_on:
+      - coordinator
+    networks:
+      - shelter_net
+    environment:
+      - XMPP_SERVER=serverhello
+      - AGENT_PASSWORD=shelter123
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  # Applicant Agents (potential adopters)
+  applicants:
+    build: .
+    container_name: shelter_applicants
+    command: python -u main.py --role applicant --config config/applicants.json
+    depends_on:
+      - coordinator
+      - adoption
+    networks:
+      - shelter_net
+    environment:
+      - XMPP_SERVER=serverhello
+      - AGENT_PASSWORD=shelter123
+      - DASHBOARD_URL=http://dashboard:5000
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+volumes:
+  prosody_data:
+
+networks:
+  shelter_net:
+    driver: bridge
+

@@ -1,0 +1,58 @@
+{
+  "animals": [
+    {
+      "id": "001",
+      "name": "Burek",
+      "species": "dog",
+      "breed": "Mixed",
+      "age": 3,
+      "sex": "male",
+      "health_status": "healthy",
+      "vaccination_status": {
+        "rabies": "2024-06-15",
+        "distemper": "2024-06-15"
+      },
+      "next_vaccination_due": "2025-06-15",
+      "dietary_requirements": "standard",
+      "behavioral_notes": "Friendly, loves walks",
+      "adoption_status": "available"
+    },
+    {
+      "id": "002",
+      "name": "Mruczek",
+      "species": "cat",
+      "breed": "Persian",
+      "age": 2,
+      "sex": "female",
+      "health_status": "healthy",
+      "vaccination_status": {
+        "fvrcp": "2024-08-20"
+      },
+      "next_vaccination_due": "2025-08-20",
+      "dietary_requirements": "sensitive_stomach",
+      "behavioral_notes": "Shy, needs quiet environment",
+      "adoption_status": "available"
+    },
+    {
+      "id": "003",
+      "name": "Reksio",
+      "species": "dog",
+      "breed": "German Shepherd",
+      "age": 5,
+      "sex": "male",
+      "health_status": "chronic_condition",
+      "vaccination_status": {
+        "rabies": "2024-03-10",
+        "distemper": "2024-03-10"
+      },
+      "next_vaccination_due": "2025-03-10",
+      "dietary_requirements": "special_diet",
+      "behavioral_notes": "Needs experienced owner, good with kids",
+      "adoption_status": "available",
+      "medications": [
+        "Joint supplement",
+        "Pain management"
+      ]
+    }
+  ]
+}

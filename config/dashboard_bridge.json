@@ -1,0 +1,6 @@
+{
+  "jid": "dashboard_bridge@serverhello",
+  "password": "shelter123",
+  "http_port": 5001,
+  "log_level": "INFO"
+}

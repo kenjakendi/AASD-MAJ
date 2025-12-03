@@ -1,0 +1,57 @@
+{
+  "applicants": [
+    {
+      "id": "app_001",
+      "name": "Jan Kowalski",
+      "age": 32,
+      "contact": "jan.kowalski@email.com",
+      "address": "ul. Kwiatowa 12, Warszawa",
+      "preferred_animals": [
+        "dog"
+      ],
+      "submission_config": {
+        "enabled": true,
+        "interval": 1800,
+        "preferred_species": [
+          "dog"
+        ]
+      }
+    },
+    {
+      "id": "app_002",
+      "name": "Anna Nowak",
+      "age": 28,
+      "contact": "anna.nowak@email.com",
+      "address": "ul. Słoneczna 5, Kraków",
+      "preferred_animals": [
+        "cat"
+      ],
+      "submission_config": {
+        "enabled": true,
+        "interval": 2000,
+        "preferred_species": [
+          "cat"
+        ]
+      }
+    },
+    {
+      "id": "app_003",
+      "name": "Piotr Wiśniewski",
+      "age": 45,
+      "contact": "piotr.wisniewski@email.com",
+      "address": "ul. Zielona 88, Gdańsk",
+      "preferred_animals": [
+        "dog",
+        "cat"
+      ],
+      "submission_config": {
+        "enabled": true,
+        "interval": 250,
+        "preferred_species": [
+          "dog",
+          "cat"
+        ]
+      }
+    }
+  ]
+}

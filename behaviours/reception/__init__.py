@@ -1,0 +1,4 @@
+from .register_animal_behaviour import RegisterAnimalBehaviour
+from .receive_checkup_confirmation_behaviour import ReceiveCheckupConfirmationBehaviour
+
+__all__ = ['RegisterAnimalBehaviour', 'ReceiveCheckupConfirmationBehaviour']

@@ -1,0 +1,62 @@
+{
+  "rooms": [
+    {
+      "id": "R001",
+      "name": "Dog Room A",
+      "type": "animal_housing",
+      "capacity": 8,
+      "current_occupants": ["001", "003"],
+      "cleanliness_state": "clean",
+      "daily_clean_time": "07:00",
+      "clean_frequency_hours": 24,
+      "requires_special_cleaning": false
+    },
+    {
+      "id": "R002",
+      "name": "Cat Room A",
+      "type": "animal_housing",
+      "capacity": 10,
+      "current_occupants": ["002"],
+      "cleanliness_state": "clean",
+      "daily_clean_time": "07:30",
+      "clean_frequency_hours": 24,
+      "requires_special_cleaning": false
+    },
+    {
+      "id": "R003",
+      "name": "Veterinary Office",
+      "type": "medical",
+      "capacity": 2,
+      "current_occupants": [],
+      "cleanliness_state": "clean",
+      "daily_clean_time": "08:00",
+      "clean_frequency_hours": 12,
+      "requires_special_cleaning": true,
+      "special_cleaning_notes": "Medical-grade disinfection required"
+    },
+    {
+      "id": "R004",
+      "name": "Quarantine Room",
+      "type": "quarantine",
+      "capacity": 4,
+      "current_occupants": [],
+      "cleanliness_state": "clean",
+      "daily_clean_time": "07:00",
+      "clean_frequency_hours": 8,
+      "requires_special_cleaning": true,
+      "special_cleaning_notes": "Isolation protocols"
+    },
+    {
+      "id": "R005",
+      "name": "Common Area",
+      "type": "common",
+      "capacity": 0,
+      "current_occupants": [],
+      "cleanliness_state": "clean",
+      "daily_clean_time": "06:30",
+      "clean_frequency_hours": 8,
+      "requires_special_cleaning": false
+    }
+  ]
+}
+

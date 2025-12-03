@@ -1,0 +1,24 @@
+{
+  "jid": "cleaner_01@serverhello",
+  "password": "shelter123",
+  "role": "cleaner",
+  "worker_id": "cleaner_01",
+  "name": "Maria Wiśniewska",
+  "competencies": ["clean"],
+  "max_concurrent_tasks": 4,
+  "availability": {
+    "monday": ["00:00-23:59"],
+    "tuesday": ["00:00-23:59"],
+    "wednesday": ["00:00-23:59"],
+    "thursday": ["00:00-23:59"],
+    "friday": ["00:00-23:59"],
+    "saturday": ["00:00-23:59"],
+    "sunday": ["00:00-23:59"]
+  },
+  "preferences": {
+    "preferred_rooms": [],
+    "daily_routine_start": "07:00"
+  },
+  "log_level": "INFO"
+}
+

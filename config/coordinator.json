@@ -1,0 +1,13 @@
+{
+  "jid": "coordinator@serverhello",
+  "password": "shelter123",
+  "role": "coordinator",
+  "assignment_strategy": "round_robin",
+  "task_check_interval": 5,
+  "max_concurrent_tasks_per_worker": 3,
+  "enable_priority_management": true,
+  "enable_fair_rotation": true,
+  "emergency_response_enabled": true,
+  "log_level": "INFO"
+}
+

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard Debug</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1e293b; color: #f1f5f9; }
+        .section { margin: 20px 0; padding: 15px; background: #334155; border-radius: 8px; }
+        h2 { color: #60a5fa; }
+        pre { background: #0f172a; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        button { padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Dashboard Debug Page</h1>
+    
+    <div class="section">
+        <h2>1. API Endpoints</h2>
+        <button onclick="checkHealth()">Check Health</button>
+        <button onclick="checkAgents()">Check Agents</button>
+        <button onclick="checkMessages()">Check Messages</button>
+        <button onclick="checkConnections()">Check Connections</button>
+        <pre id="api-results">Click buttons to test API...</pre>
+    </div>
+
+    <div class="section">
+        <h2>2. Libraries</h2>
+        <pre id="lib-check">Checking...</pre>
+    </div>
+
+    <div class="section">
+        <h2>3. Send Test Data</h2>
+        <button onclick="sendTestAgent()">Register Test Agent</button>
+        <button onclick="sendTestMessage()">Send Test Message</button>
+        <pre id="test-results">Results will appear here...</pre>
+    </div>
+
+    <script>
+        // Check libraries
+        document.getElementById('lib-check').textContent = 
+            `Socket.IO: ${typeof io !== 'undefined' ? '✅' : '❌'}\n` +
+            `vis.js: ${typeof vis !== 'undefined' ? '✅' : '❌'}\n` +
+            `Chart.js: ${typeof Chart !== 'undefined' ? '✅' : '❌'}`;
+
+        async function checkHealth() {
+            const result = await fetch('/api/health').then(r => r.json());
+            document.getElementById('api-results').textContent = 
+                'Health: ' + JSON.stringify(result, null, 2);
+        }
+
+        async function checkAgents() {
+            const result = await fetch('/api/agents').then(r => r.json());
+            document.getElementById('api-results').textContent = 
+                'Agents: ' + JSON.stringify(result, null, 2);
+        }
+
+        async function checkMessages() {
+            const result = await fetch('/api/messages').then(r => r.json());
+            document.getElementById('api-results').textContent = 
+                'Messages (showing last 5):\n' + JSON.stringify(result.slice(-5), null, 2);
+        }
+
+        async function checkConnections() {
+            const result = await fetch('/api/connections').then(r => r.json());
+            document.getElementById('api-results').textContent = 
+                'Connections: ' + JSON.stringify(result, null, 2);
+        }
+
+        async function sendTestAgent() {
+            const result = await fetch('/api/track_agent', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    jid: `test_${Date.now()}@serverhello`,
+                    role: 'coordinator',
+                    metadata: {}
+                })
+            }).then(r => r.json());
+            document.getElementById('test-results').textContent = 
+                'Agent registered: ' + JSON.stringify(result, null, 2);
+        }
+
+        async function sendTestMessage() {
+            const result = await fetch('/api/track_message', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    from_jid: 'test1@serverhello',
+                    to_jid: 'test2@serverhello',
+                    content: {test: true, timestamp: Date.now()},
+                    metadata: {protocol: 'test', performative: 'inform'}
+                })
+            }).then(r => r.json());
+            document.getElementById('test-results').textContent = 
+                'Message sent: ' + JSON.stringify(result, null, 2);
+        }
+    </script>
+</body>
+</html>
+
