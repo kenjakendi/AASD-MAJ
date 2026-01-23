@@ -51,3 +51,8 @@ class SubmitApplicationBehaviour(PeriodicBehaviour):
                 
             except Exception as e:
                 self.agent.logger.error(f"Error submitting application: {e}")
+
+
+
+
+

@@ -36,3 +36,8 @@ class ReceiveAdoptionStatusBehaviour(CyclicBehaviour):
                 
             except Exception as e:
                 self.agent.logger.error(f"Error processing adoption status update: {e}")
+
+
+
+
+

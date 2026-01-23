@@ -52,3 +52,8 @@ class ReceiveCheckupConfirmationBehaviour(CyclicBehaviour):
                 
             except Exception as e:
                 self.agent.logger.error(f"Error processing checkup confirmation: {e}")
+
+
+
+
+

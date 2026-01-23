@@ -1,3 +1,8 @@
+"""
+Applicant Agent - Represents a person applying for adoption
+Submits adoption applications
+"""
+    
 from typing import Dict
 from datetime import datetime
 import uuid
@@ -11,6 +16,13 @@ from config.settings import Settings
 
 
 class ApplicantAgent(BaseAgent):
+    """
+    Applicant Agent
+    Represents a person interested in adopting an animal:
+    - Browses available animals
+    - Submits adoption applications
+    - Receives application status updates
+    """
     
     def __init__(self, jid: str, password: str, applicant_data: Dict):
         super().__init__(jid, password, applicant_data)
@@ -27,32 +39,29 @@ class ApplicantAgent(BaseAgent):
         self.submitted_applications = []
     
     async def setup(self):
+        """Setup applicant agent and behaviours"""
         await super().setup()
-
+        
         self.logger.info(f"Setting up Applicant Agent: {self.applicant_name}")
-
+        
         # Behaviour 1: Receive confirmation messages
         confirmation_template = Template()
         confirmation_template.set_metadata("protocol", "ConfirmAdoptionApplicationTask")
         self.add_behaviour(self._create_receive_confirmation_behaviour(), confirmation_template)
-
-        # Behaviour 2: Receive dashboard triggers to submit adoption application
-        trigger_template = Template()
-        trigger_template.set_metadata("protocol", "TriggerAdoptionApplication")
-        self.add_behaviour(self._create_receive_trigger_behaviour(), trigger_template)
-
-        # Behaviour 3: Periodically submit adoption applications (if enabled)
+        
+        # Behaviour 2: Periodically submit adoption applications (if enabled)
         submission_config = self.config.get('submission_config', {})
         if submission_config.get('enabled', False):
             interval = submission_config.get('interval', 180)  # Default 3 minutes
             self.add_behaviour(SubmitApplicationBehaviour(period=interval))
             self.logger.info(f"Enabled periodic application submission (interval: {interval}s)")
-
+        
         self.logger.info(f"Applicant {self.applicant_name} is ready")
     
     def _create_receive_confirmation_behaviour(self):
+        """Create a simple behaviour to receive confirmations"""
         from spade.behaviour import CyclicBehaviour
-
+        
         class ReceiveConfirmationBehaviour(CyclicBehaviour):
             async def run(self):
                 msg = await self.receive(timeout=10)
@@ -62,48 +71,26 @@ class ApplicantAgent(BaseAgent):
                         content = json.loads(msg.body)
                         agent = self.agent
                         agent.logger.info(f"Received adoption confirmation: {content}")
-
+                        
                         if content.get('status') == 'adopted':
                             agent.logger.info(f"Adoption approved for animal {content.get('animalId')}!")
                     except Exception as e:
                         agent.logger.error(f"Error processing confirmation: {e}")
-
+        
         return ReceiveConfirmationBehaviour()
-
-    def _create_receive_trigger_behaviour(self):
-        from spade.behaviour import CyclicBehaviour
-
-        class ReceiveTriggerBehaviour(CyclicBehaviour):
-            async def run(self):
-                msg = await self.receive(timeout=10)
-                if msg:
-                    import json
-                    try:
-                        content = json.loads(msg.body)
-                        agent = self.agent
-
-                        animal_id = content.get('animal_id')
-                        triggered_by = content.get('triggered_by', 'unknown')
-
-                        agent.logger.info(
-                            f"🎯 Dashboard triggered adoption application for animal {animal_id}"
-                        )
-
-                        # Submit the adoption application
-                        application_id = await agent.submit_adoption_application(animal_id)
-
-                        agent.logger.info(
-                            f"✅ Submitted application {application_id} for animal {animal_id} "
-                            f"(triggered by {triggered_by})"
-                        )
-
-                    except Exception as e:
-                        agent.logger.error(f"Error processing trigger: {e}")
-
-        return ReceiveTriggerBehaviour()
     
     async def submit_adoption_application(self, animal_id: str, 
                                          additional_info: Dict = None) -> str:
+        """
+        Submit an adoption application
+        
+        Args:
+            animal_id: ID of animal to adopt
+            additional_info: Additional application information
+            
+        Returns:
+            Application ID
+        """
         application_id = f"APP_{str(uuid.uuid4())[:8].upper()}"
         
         info = additional_info or {}
@@ -139,6 +126,8 @@ class ApplicantAgent(BaseAgent):
         return application_id
     
     def is_interested_in(self, animal_species: str) -> bool:
+        """Check if applicant is interested in this animal species"""
         if not self.preferred_animals:
             return True
         return animal_species.lower() in [a.lower() for a in self.preferred_animals]
+
