@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  # XMPP Server for integration tests
+  xmpp_test_server:
+    image: prosody/prosody:latest
+    container_name: shelter_xmpp_test
+    hostname: serverhello
+    environment:
+      PROSODY_VIRTUAL_HOSTS: "serverhello"
+      PROSODY_ADMINS: "admin@serverhello"
+    ports:
+      - "5222:5222"  # Client connections
+      - "5269:5269"  # Server-to-server connections
+    networks:
+      - shelter_test_net
+    healthcheck:
+      test: ["CMD", "prosodyctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  shelter_test_net:
+    driver: bridge
