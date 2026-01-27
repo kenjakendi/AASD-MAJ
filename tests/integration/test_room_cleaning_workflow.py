@@ -6,7 +6,7 @@ Room Agent → Coordinator → Cleaner → Room State Update
 
 import pytest
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from spade.message import Message
 import json
 

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # XMPP Server for integration tests
   xmpp_test_server:
@@ -9,9 +7,13 @@ services:
     environment:
       PROSODY_VIRTUAL_HOSTS: "serverhello"
       PROSODY_ADMINS: "admin@serverhello"
+      PROSODY_C2S_REQUIRE_ENCRYPTION: "false"
+      PROSODY_S2S_REQUIRE_ENCRYPTION: "false"
     ports:
       - "5222:5222"  # Client connections
       - "5269:5269"  # Server-to-server connections
+    volumes:
+      - ./prosody.cfg.lua:/etc/prosody/prosody.cfg.lua:ro
     networks:
       - shelter_test_net
     healthcheck:

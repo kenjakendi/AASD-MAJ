@@ -32,7 +32,8 @@ async def test_basic_agent_communication(test_coordinator_agent, test_caretaker_
     # ASSERT
     received_msg = await wait_for_message_helper(caretaker, timeout=3.0)
     assert received_msg is not None, "Caretaker should receive message"
-    assert received_msg.sender == str(coordinator.jid)
+    # Compare bare JID (without resource)
+    assert str(coordinator.jid) in str(received_msg.sender)
 
 
 @pytest.mark.asyncio

@@ -1,33 +1,27 @@
 # SPADE Framework
-spade==3.3.2
-
-# XMPP Client
-aioxmpp==0.13.3
-slixmpp==1.8.5
+spade>=4.0.0
 
 # Async support
-aiohttp==3.8.4
-asyncio==3.4.3
+aiohttp>=3.9.0
 
 # Data handling
-pydantic==2.5.3
-python-dateutil==2.8.2
+pydantic>=2.5.0
+python-dateutil>=2.8.2
 
 # Configuration
-pyyaml==6.0.1
-python-dotenv==1.0.0
+pyyaml>=6.0.1
+python-dotenv>=1.0.0
 
 # Logging
-colorlog==6.8.0
-python-json-logger==2.0.7
+colorlog>=6.8.0
+python-json-logger>=2.0.7
 
 # Utilities
-schedule==1.2.0
-requests==2.31.0
+schedule>=1.2.0
+requests>=2.31.0
 
 # Web Framework for Dashboard Bridge Agent
-# Using Flask 2.2.x which is compatible with Jinja2 3.0.3 (required by SPADE)
-Flask==2.2.5
+Flask>=2.2.5
 
 # Testing dependencies
 pytest>=7.4.0
@@ -36,3 +30,4 @@ pytest-cov>=4.1.0
 pytest-mock>=3.11.0
 freezegun>=1.2.2
 faker>=19.0.0
+pytest-timeout>=2.2.0

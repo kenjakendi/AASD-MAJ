@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(docker-compose:*)",
+      "Bash(timeout 10 bash:*)",
+      "Bash(wc:*)",
+      "Bash(py --list:*)",
+      "Bash(py:*)",
+      "Bash(pip show:*)",
+      "Bash(pip index:*)",
+      "Bash(docker logs:*)",
+      "Bash(python:*)",
+      "Bash(venv311/Scripts/python:*)",
+      "Bash(venv311/Scripts/pip show:*)",
+      "Bash(venv311/Scripts/pip:*)"
+    ]
+  }
+}

@@ -12,12 +12,22 @@ from spade.agent import Agent
 from spade.behaviour import OneShotBehaviour, CyclicBehaviour
 from spade.message import Message
 from spade.template import Template
+from spade.xmpp_client import XMPPClient
 
 # XMPP configuration from docker-compose.yml
-XMPP_SERVER = "serverhello"
+XMPP_SERVER = "localhost"  # Use localhost since Docker exposes port to host
 XMPP_PORT = 5222
 AGENT_PASSWORD = "shelter123"
 TEST_TIMEOUT = 30  # seconds
+
+
+class InsecureXMPPClient(XMPPClient):
+    """XMPPClient that allows PLAIN auth without TLS for testing."""
+
+    def __init__(self, jid, password, verify_security, auto_register):
+        super().__init__(jid, password, verify_security, auto_register)
+        # Allow PLAIN mechanism without TLS
+        self['feature_mechanisms'].unencrypted_plain = True
 
 
 class MessageCollector:
@@ -58,12 +68,73 @@ class TestAgent(Agent):
         self.collector = collector or MessageCollector()
         self.received_messages: List[Message] = []
 
+    async def send(self, msg: Message) -> None:
+        """Send a message through the XMPP client."""
+        import json
+        if not msg.sender:
+            msg.sender = str(self.jid)
+
+        # Encode body and metadata together as JSON
+        envelope = {
+            "body": msg.body,
+            "metadata": dict(msg.metadata)
+        }
+
+        # Convert SPADE Message to slixmpp message
+        stanza = self.client.make_message(
+            mto=msg.to,
+            mfrom=str(self.jid),
+            mbody=json.dumps(envelope),
+        )
+        stanza.send()
+
+    async def _async_start(self, auto_register: bool = True) -> None:
+        """Override to use InsecureXMPPClient for testing."""
+        await self._hook_plugin_before_connection()
+
+        # Use InsecureXMPPClient instead of regular XMPPClient
+        self.client = InsecureXMPPClient(
+            self.jid, self.password, self.verify_security, auto_register
+        )
+        # Presence service
+        from spade.presence import PresenceManager
+        self.presence = PresenceManager(agent=self, approve_all=False)
+
+        await self._async_connect()
+
+        await self._hook_plugin_after_connection()
+
+        await self.setup()
+        self._alive.set()
+        from spade.behaviour import FSMBehaviour
+        for behaviour in self.behaviours:
+            if not behaviour.is_running:
+                behaviour.set_agent(self)
+                if issubclass(type(behaviour), FSMBehaviour):
+                    for _, state in behaviour.get_states().items():
+                        state.set_agent(self)
+                behaviour.start()
+
     async def setup(self):
         """Agent setup with message collection behavior."""
+        import json
+
         class CollectMessagesBehaviour(CyclicBehaviour):
             async def run(inner_self):
                 msg = await inner_self.receive(timeout=1)
                 if msg:
+                    # Try to decode envelope with metadata
+                    try:
+                        envelope = json.loads(msg.body)
+                        if isinstance(envelope, dict) and "metadata" in envelope:
+                            # Restore metadata from envelope
+                            for key, value in envelope.get("metadata", {}).items():
+                                msg.set_metadata(key, value)
+                            # Restore original body
+                            msg.body = envelope.get("body", msg.body)
+                    except (json.JSONDecodeError, TypeError):
+                        pass  # Not an envelope, use message as-is
+
                     self.received_messages.append(msg)
                     if self.collector:
                         self.collector.add_message(msg)
@@ -99,7 +170,7 @@ async def test_coordinator_agent(xmpp_config, message_collector):
     jid = f"test_coordinator_{datetime.now().timestamp()}@{xmpp_config['server']}"
     agent = TestAgent(jid, xmpp_config['password'], message_collector)
 
-    await agent.start()
+    await agent.start(auto_register=True)
     await asyncio.sleep(1)  # Wait for agent startup
 
     yield agent
@@ -114,7 +185,7 @@ async def test_caretaker_agent(xmpp_config, message_collector):
     jid = f"test_caretaker_{datetime.now().timestamp()}@{xmpp_config['server']}"
     agent = TestAgent(jid, xmpp_config['password'], message_collector)
 
-    await agent.start()
+    await agent.start(auto_register=True)
     await asyncio.sleep(1)
 
     yield agent
@@ -129,7 +200,7 @@ async def test_veterinarian_agent(xmpp_config, message_collector):
     jid = f"test_vet_{datetime.now().timestamp()}@{xmpp_config['server']}"
     agent = TestAgent(jid, xmpp_config['password'], message_collector)
 
-    await agent.start()
+    await agent.start(auto_register=True)
     await asyncio.sleep(1)
 
     yield agent
@@ -144,7 +215,7 @@ async def test_cleaner_agent(xmpp_config, message_collector):
     jid = f"test_cleaner_{datetime.now().timestamp()}@{xmpp_config['server']}"
     agent = TestAgent(jid, xmpp_config['password'], message_collector)
 
-    await agent.start()
+    await agent.start(auto_register=True)
     await asyncio.sleep(1)
 
     yield agent
@@ -159,7 +230,7 @@ async def test_adoption_agent(xmpp_config, message_collector):
     jid = f"test_adoption_{datetime.now().timestamp()}@{xmpp_config['server']}"
     agent = TestAgent(jid, xmpp_config['password'], message_collector)
 
-    await agent.start()
+    await agent.start(auto_register=True)
     await asyncio.sleep(1)
 
     yield agent
@@ -174,7 +245,7 @@ async def test_animal_agent(xmpp_config, message_collector):
     jid = f"test_animal_{datetime.now().timestamp()}@{xmpp_config['server']}"
     agent = TestAgent(jid, xmpp_config['password'], message_collector)
 
-    await agent.start()
+    await agent.start(auto_register=True)
     await asyncio.sleep(1)
 
     yield agent
@@ -189,7 +260,7 @@ async def test_room_agent(xmpp_config, message_collector):
     jid = f"test_room_{datetime.now().timestamp()}@{xmpp_config['server']}"
     agent = TestAgent(jid, xmpp_config['password'], message_collector)
 
-    await agent.start()
+    await agent.start(auto_register=True)
     await asyncio.sleep(1)
 
     yield agent
@@ -204,7 +275,7 @@ async def test_applicant_agent(xmpp_config, message_collector):
     jid = f"test_applicant_{datetime.now().timestamp()}@{xmpp_config['server']}"
     agent = TestAgent(jid, xmpp_config['password'], message_collector)
 
-    await agent.start()
+    await agent.start(auto_register=True)
     await asyncio.sleep(1)
 
     yield agent
@@ -221,7 +292,7 @@ async def multiple_caretaker_agents(xmpp_config, message_collector):
     for i in range(2):
         jid = f"test_caretaker_{i}_{datetime.now().timestamp()}@{xmpp_config['server']}"
         agent = TestAgent(jid, xmpp_config['password'], message_collector)
-        await agent.start()
+        await agent.start(auto_register=True)
         await asyncio.sleep(0.5)
         agents.append(agent)
 
